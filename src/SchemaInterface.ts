@@ -30,7 +30,8 @@ export type TableColumnSpec<TableName extends string, CustomStringType = string,
   TableColumnType<TableName, CustomStringType, CustomObjectType>,
   'unique' | 'not unique',
   'nullable' | 'not nullable',
-  'mutable' | 'not mutable'
+  'mutable' | 'not mutable',
+  boolean?
 ];
 
 /**
@@ -41,6 +42,7 @@ export type TableSpec<TableName extends string, CustomStringType = string, Custo
   sequences?: Array<[string, number?]>;
   triggers?: string[];
   templates?: [string, 'kv' | 'stringdict' | 'object'][];
+  indices?: [string[]];
 };
 
 /**

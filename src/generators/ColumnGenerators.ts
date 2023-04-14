@@ -148,7 +148,7 @@ export function basicKnexField<T extends string, S extends string, O extends str
 export function knexColumnSpec<T extends string, S extends string, O extends string>(
   spec: TableColumnSpec<T, S, O>
 ): string {
-  const [name, ctype, unique, nullable] = spec;
+  const [name, ctype, unique, nullable, mutable, shouldIndex] = spec;
   let field = `table.${basicKnexField(name, ctype)}`;
 
   // 'id' field is always primary
@@ -158,5 +158,6 @@ export function knexColumnSpec<T extends string, S extends string, O extends str
 
   if (unique === 'unique') field += '.unique()';
   if (nullable === 'not nullable') field += '.notNullable()';
+  if (shouldIndex) field += '.index()'
   return field;
 }

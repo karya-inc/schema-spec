@@ -81,10 +81,15 @@ export function knexTableSpec<T extends string, S extends string, O extends stri
     }) || [];
 
   const triggers = spec.triggers?.map((trigger) => `await knex.raw(\`${trigger}\`)`) || [];
+
+  // Indices
+  const indices = spec.indices?.map((columns) => `table.index(${JSON.stringify(columns)})`) || [];
+
   return `
   export async function create${tableType}Table() {
     await knex.schema.createTable('${name}', async (table) => {
       ${knexColSpecs.join('\n')}
+      ${indices.join(`\n`)}
     });
     ${sequences.join('\n')}
     ${triggers.join('\n')}
