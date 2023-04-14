@@ -1,6 +1,6 @@
 {
   "name": "@karya/schema-spec",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "This package implements a module that converts a schema specification to db functions, TS type specifications, etc.",
   "license": "MIT",
   "main": "dist/Index",
