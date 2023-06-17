@@ -42,7 +42,7 @@ export type TableSpec<TableName extends string, CustomStringType = string, Custo
   sequences?: Array<[string, number?]>;
   triggers?: string[];
   templates?: [string, 'kv' | 'stringdict' | 'object'][];
-  indices?: [string[]];
+  indices?: string[][];
 };
 
 /**
