@@ -3,6 +3,9 @@
   "version": "1.1.2",
   "description": "This package implements a module that converts a schema specification to db functions, TS type specifications, etc.",
   "license": "MIT",
+  "engines": {
+    "node": "> 16"
+  },
   "main": "dist/Index",
   "types": "dist/Index.d.ts",
   "files": [
