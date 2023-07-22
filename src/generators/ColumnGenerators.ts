@@ -3,50 +3,51 @@
 //
 // Column level generators.
 
-import { TableColumnSpec, TableColumnType } from '../SchemaInterface';
+import { TableColumnSpec, TableColumnType } from "../SchemaInterface";
 
 /**
  * Return the typescript type for a specific column
  * @param ctype Table column type
  * @param name Name of the column
  */
-export function typescriptType<T extends string, S extends string, O extends string>(
-  name: string,
-  ctype: TableColumnType<T, S, O>
-): string {
+export function typescriptType<
+  T extends string,
+  S extends string,
+  O extends string
+>(name: string, ctype: TableColumnType<T, S, O>): string {
   switch (ctype[0]) {
-    case 'bigserial':
-      return 'string';
-    case 'bigint':
-      return 'string';
-    case 'int':
-      return 'number';
-    case 'float':
-      return 'number';
-    case 'boolean':
-      return 'boolean';
-    case 'string':
-      return ctype[2] ? `Custom.${ctype[2]}` : 'string';
-    case 'text':
-      return 'string';
-    case 'timestamp':
-      return 'string';
-    case '>':
-      return 'string';
-    case 'stringarray':
+    case "bigserial":
+      return "string";
+    case "bigint":
+      return "string";
+    case "int":
+      return "number";
+    case "float":
+      return "number";
+    case "boolean":
+      return "boolean";
+    case "string":
+      return ctype[2] ? `Custom.${ctype[2]}` : "string";
+    case "text":
+      return "string";
+    case "timestamp":
+      return "string";
+    case ">":
+      return "string";
+    case "stringarray":
       return `{ ${name}: string[] }`;
-    case 'kv':
-      return '{ [id: string]: string | number | boolean | string[] }';
-    case 'stringdict':
-      return '{ [id: string]: string }';
-    case 'object': {
+    case "kv":
+      return "{ [id: string]: any }";
+    case "stringdict":
+      return "{ [id: string]: string }";
+    case "object": {
       const objType = ctype[1];
       const templates = ctype[2];
-      if (!objType) return 'object';
-      const templateString = templates ? `<${templates.join(',')}>` : '';
+      if (!objType) return "object";
+      const templateString = templates ? `<${templates.join(",")}>` : "";
       return `Custom.${objType} ${templateString}`;
     }
-    case 'template':
+    case "template":
       return ctype[1];
     default:
       ((obj: never) => {
@@ -59,14 +60,18 @@ export function typescriptType<T extends string, S extends string, O extends str
  * Generate typescript definition for a column given a spec
  * @param spec Specification of the column
  */
-export function typescriptColumnSpec<T extends string, S extends string, O extends string>(
-  spec: TableColumnSpec<T, S, O>
-): string {
+export function typescriptColumnSpec<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: TableColumnSpec<T, S, O>): string {
   const name = spec[0];
   const ctype = spec[1];
   const nullable = spec[3];
   const tsType = typescriptType(name, ctype);
-  return nullable == 'nullable' ? `${name}: ${tsType} | null` : `${name}: ${tsType}`;
+  return nullable == "nullable"
+    ? `${name}: ${tsType} | null`
+    : `${name}: ${tsType}`;
 }
 
 /**
@@ -74,65 +79,74 @@ export function typescriptColumnSpec<T extends string, S extends string, O exten
  * @param name Name of the field
  * @param ctype Specification of the column
  */
-export function basicKnexField<T extends string, S extends string, O extends string>(
-  name: string,
-  ctype: TableColumnType<T, S, O>
-): string {
+export function basicKnexField<
+  T extends string,
+  S extends string,
+  O extends string
+>(name: string, ctype: TableColumnType<T, S, O>): string {
   switch (ctype[0]) {
-    case 'bigserial':
+    case "bigserial":
       return `specificType('${name}', 'BIGSERIAL')`;
 
-    case 'bigint':
+    case "bigint":
       return `bigInteger('${name}')`;
 
-    case 'int': {
+    case "int": {
       const field = `integer('${name}')`;
       const def = ctype[1];
       return def ? `${field}.defaultTo(${def})` : field;
     }
 
-    case 'float':
+    case "float":
       return `float('${name}')`;
 
-    case 'boolean': {
+    case "boolean": {
       const field = `boolean('${name}')`;
       const def = ctype[1];
-      return def == undefined ? field : def ? `${field}.defaultTo(true)` : `${field}.defaultTo(false)`;
+      return def == undefined
+        ? field
+        : def
+        ? `${field}.defaultTo(true)`
+        : `${field}.defaultTo(false)`;
     }
 
-    case 'string': {
+    case "string": {
       const len = ctype[1];
       return `specificType('${name}', 'VARCHAR(${len})')`;
     }
 
-    case 'text':
+    case "text":
       return `text('${name}')`;
 
-    case 'timestamp': {
-      const now = 'knex.fn.now()';
+    case "timestamp": {
+      const now = "knex.fn.now()";
       const eon = new Date(0).toISOString();
       const field = `timestamp('${name}')`;
       const def = ctype[1];
-      return def ? (def == 'eon' ? `${field}.defaultTo('${eon}')` : `${field}.defaultTo(${now})`) : field;
+      return def
+        ? def == "eon"
+          ? `${field}.defaultTo('${eon}')`
+          : `${field}.defaultTo(${now})`
+        : field;
     }
 
-    case '>':
+    case ">":
       return `bigInteger('${name}')`;
 
-    case 'stringarray':
-      return `json('${name}').defaultTo('{ "${name}": [] }')`;
+    case "stringarray":
+      return `jsonb('${name}').defaultTo('{ "${name}": [] }')`;
 
-    case 'kv':
-      return `json('${name}')`;
+    case "kv":
+      return `jsonb('${name}')`;
 
-    case 'stringdict':
-      return `json('${name}')`;
+    case "stringdict":
+      return `jsonb('${name}')`;
 
-    case 'object':
-      return `json('${name}')`;
+    case "object":
+      return `jsonb('${name}')`;
 
-    case 'template':
-      return `json('${name}')`;
+    case "template":
+      return `jsonb('${name}')`;
 
     default:
       ((obj: never) => {
@@ -145,19 +159,21 @@ export function basicKnexField<T extends string, S extends string, O extends str
  * Generates knex column generation statement for a column with a given spec.
  * @param spec Specification of the column
  */
-export function knexColumnSpec<T extends string, S extends string, O extends string>(
-  spec: TableColumnSpec<T, S, O>
-): string {
+export function knexColumnSpec<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: TableColumnSpec<T, S, O>): string {
   const [name, ctype, unique, nullable, mutable, shouldIndex] = spec;
   let field = `table.${basicKnexField(name, ctype)}`;
 
   // 'id' field is always primary
-  if (name == 'id') {
+  if (name == "id") {
     return `${field}.primary()`;
   }
 
-  if (unique === 'unique') field += '.unique()';
-  if (nullable === 'not nullable') field += '.notNullable()';
-  if (shouldIndex) field += '.index()'
+  if (unique === "unique") field += ".unique()";
+  if (nullable === "not nullable") field += ".notNullable()";
+  if (shouldIndex) field += ".index()";
   return field;
 }
