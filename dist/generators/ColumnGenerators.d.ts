@@ -1,4 +1,4 @@
-import { TableColumnSpec, TableColumnType } from '../SchemaInterface';
+import { TableColumnSpec, TableColumnType } from "../SchemaInterface";
 /**
  * Return the typescript type for a specific column
  * @param ctype Table column type
