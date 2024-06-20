@@ -76,7 +76,7 @@ export function knexTableSpec<T extends string, S extends string, O extends stri
       commands.push(`ALTER TABLE ${name} ALTER ${col_name} SET DEFAULT nextval('${seq_name}')`);
       if (init_val != undefined) {
         commands.push(`SELECT SETVAL('${seq_name}', ${init_val})`);
-      }
+}
       return commands.map((c) => `await knex.raw(\`${c};\`);`).join('\n');
     }) || [];
 
@@ -93,9 +93,36 @@ export function knexTableSpec<T extends string, S extends string, O extends stri
     });
     ${sequences.join('\n')}
     ${triggers.join('\n')}
-  }
+}
 
   export async function drop${tableType}Table() {
+    await knex.raw('DROP TABLE IF EXISTS ${name} CASCADE')
+  }`;
+}
+
+export function knexAddTableSpec<T extends string, S extends string, O extends string>(
+  name: string,
+  spec: TableSpec<T, S, O>
+): string {
+  const columns = spec.columns;
+  const knexColSpecs = columns.map((column) => knexColumnSpec(column));
+  const tableType = typescriptTableName(name);
+  const triggers = spec.triggers?.map((trigger) => `await knex.raw(\`${trigger}\`)`) || [];
+  return `
+  export async function create${tableType}Table() {
+    await knex.schema.createTable('${name}', async (table) => {
+      ${knexColSpecs.join('\n')}
+    });
+    ${triggers.join('\n')}
+  }`;
+}
+
+export function knexDropTableSpec<T extends string, S extends string, O extends string>(
+  name: string,
+  spec: TableSpec<T, S, O>
+): string {
+  const tableType = typescriptTableName(name);
+  return  `export async function drop${tableType}Table() {
     await knex.raw('DROP TABLE IF EXISTS ${name} CASCADE')
   }`;
 }
