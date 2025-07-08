@@ -3,16 +3,20 @@
 //
 // Entry point for schema specification module
 
-export * from './SchemaInterface';
+export * from "./SchemaInterface";
 
-import { knexDbSpec, typescriptDbInterface } from './generators/DatabaseGenerators';
-import * as prettier from 'prettier';
-import * as fs from 'fs';
-import { DatabaseSpec } from './SchemaInterface';
+import {
+  fakeDataGenerators,
+  knexDbSpec,
+  typescriptDbInterface,
+} from "./generators/DatabaseGenerators";
+import * as prettier from "prettier";
+import * as fs from "fs";
+import { DatabaseSpec } from "./SchemaInterface";
 
 // Read the formatter config
 const prettierconfig: prettier.Options = {
-  parser: 'typescript',
+  parser: "typescript",
   semi: true,
   singleQuote: true,
   tabWidth: 2,
@@ -27,11 +31,11 @@ const format = (source: string) => prettier.format(source, prettierconfig);
  * @param dbSpec Database specification
  * @param fileName Path to the file to write the typescript interface
  */
-export function writeTypescriptInterfaceFile<T extends string, S extends string, O extends string>(
-  dbSpec: DatabaseSpec<T, S, O>,
-  customTypePath: string,
-  fileName: string
-) {
+export function writeTypescriptInterfaceFile<
+  T extends string,
+  S extends string,
+  O extends string
+>(dbSpec: DatabaseSpec<T, S, O>, customTypePath: string, fileName: string) {
   const data = typescriptDbInterface(dbSpec, customTypePath);
   fs.writeFileSync(fileName, format(data));
 }
@@ -41,11 +45,24 @@ export function writeTypescriptInterfaceFile<T extends string, S extends string,
  * @param dbSpec Database specification
  * @param fileName Path to the destination file
  */
-export function writeTableFunctionsFile<T extends string, S extends string, O extends string>(
+export function writeTableFunctionsFile<
+  T extends string,
+  S extends string,
+  O extends string
+>(dbSpec: DatabaseSpec<T, S, O>, knexClientPath: string, fileName: string) {
+  const data = knexDbSpec(dbSpec, knexClientPath);
+  fs.writeFileSync(fileName, format(data));
+}
+
+export function writeFakeDataGeneratorsFile<
+  T extends string,
+  S extends string,
+  O extends string
+>(
   dbSpec: DatabaseSpec<T, S, O>,
-  knexClientPath: string,
+  tableInterfacesPath: string,
   fileName: string
 ) {
-  const data = knexDbSpec(dbSpec, knexClientPath);
+  const data = fakeDataGenerators(dbSpec, tableInterfacesPath);
   fs.writeFileSync(fileName, format(data));
 }

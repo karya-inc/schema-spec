@@ -3,9 +3,14 @@
 //
 // Table level generators.
 
-import camelcase from 'camelcase';
-import { TableSpec } from '../SchemaInterface';
-import { knexColumnSpec, typescriptColumnSpec, typescriptType } from './ColumnGenerators';
+import camelcase from "camelcase";
+import { TableSpec } from "../SchemaInterface";
+import {
+  fakedColumnValue,
+  knexColumnSpec,
+  typescriptColumnSpec,
+  typescriptType,
+} from "./ColumnGenerators";
 
 /**
  * Generate the typescript name for a table. Converts given name to pascal case.
@@ -20,17 +25,21 @@ export function typescriptTableName(name: string): string {
  * Generate the table template string for the given specs
  * @param templateSpec Spec for the table templates
  */
-export function tableTemplate<T extends string, S extends string, O extends string>(
-  templateSpec: TableSpec<T, S, O>['templates'] | undefined,
+export function tableTemplate<
+  T extends string,
+  S extends string,
+  O extends string
+>(
+  templateSpec: TableSpec<T, S, O>["templates"] | undefined,
   includeValues: boolean = true
 ): string {
   const templateString = templateSpec
     ?.map(([t, d]) => {
-      const dt = typescriptType('', [d]);
+      const dt = typescriptType("", [d]);
       return includeValues ? `${t} = ${dt}` : t;
     })
-    .join(',');
-  return templateString ? `<${templateString}>` : '';
+    .join(",");
+  return templateString ? `<${templateString}>` : "";
 }
 
 /**
@@ -39,17 +48,17 @@ export function tableTemplate<T extends string, S extends string, O extends stri
  * @param spec Spec for the table
  * @param suffix Suffix to be appended to the table type name
  */
-export function typescriptTableRecordSpec<T extends string, S extends string, O extends string>(
-  name: string,
-  spec: TableSpec<T, S, O>,
-  suffix: string = 'Record'
-): string {
+export function typescriptTableRecordSpec<
+  T extends string,
+  S extends string,
+  O extends string
+>(name: string, spec: TableSpec<T, S, O>, suffix: string = "Record"): string {
   const columns = spec.columns;
   const tsColSpecs = columns.map((column) => typescriptColumnSpec(column));
   const tableType = typescriptTableName(name);
   return `
   export type ${tableType}${suffix} ${tableTemplate(spec.templates)} = {
-    ${tsColSpecs.join('\n')}
+    ${tsColSpecs.join("\n")}
   }`;
 }
 
@@ -58,10 +67,11 @@ export function typescriptTableRecordSpec<T extends string, S extends string, O 
  * @param name Name of the table
  * @param spec Spec fot the table
  */
-export function knexTableSpec<T extends string, S extends string, O extends string>(
-  name: string,
-  spec: TableSpec<T, S, O>
-): string {
+export function knexTableSpec<
+  T extends string,
+  S extends string,
+  O extends string
+>(name: string, spec: TableSpec<T, S, O>): string {
   const columns = spec.columns;
   const knexColSpecs = columns.map((column) => knexColumnSpec(column));
   const tableType = typescriptTableName(name);
@@ -73,29 +83,53 @@ export function knexTableSpec<T extends string, S extends string, O extends stri
       const commands = [];
       const seq_name = `${name}_${col_name}_seq`;
       commands.push(`CREATE SEQUENCE ${seq_name}`);
-      commands.push(`ALTER TABLE ${name} ALTER ${col_name} SET DEFAULT nextval('${seq_name}')`);
+      commands.push(
+        `ALTER TABLE ${name} ALTER ${col_name} SET DEFAULT nextval('${seq_name}')`
+      );
       if (init_val != undefined) {
         commands.push(`SELECT SETVAL('${seq_name}', ${init_val})`);
       }
-      return commands.map((c) => `await knex.raw(\`${c};\`);`).join('\n');
+      return commands.map((c) => `await knex.raw(\`${c};\`);`).join("\n");
     }) || [];
 
-  const triggers = spec.triggers?.map((trigger) => `await knex.raw(\`${trigger}\`)`) || [];
+  const triggers =
+    spec.triggers?.map((trigger) => `await knex.raw(\`${trigger}\`)`) || [];
 
   // Indices
-  const indices = spec.indices?.map((columns) => `table.index(${JSON.stringify(columns)})`) || [];
+  const indices =
+    spec.indices?.map((columns) => `table.index(${JSON.stringify(columns)})`) ||
+    [];
 
   return `
   export async function create${tableType}Table() {
     await knex.schema.createTable('${name}', async (table) => {
-      ${knexColSpecs.join('\n')}
+      ${knexColSpecs.join("\n")}
       ${indices.join(`\n`)}
     });
-    ${sequences.join('\n')}
-    ${triggers.join('\n')}
+    ${sequences.join("\n")}
+    ${triggers.join("\n")}
   }
 
   export async function drop${tableType}Table() {
     await knex.raw('DROP TABLE IF EXISTS ${name} CASCADE')
   }`;
+}
+
+export function fakeRowGenerator<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: TableSpec<T, S, O>): string {
+  const columns = spec.columns;
+  const fakedColumns = columns.map((column) => {
+    const columnName = column[0];
+    const ctype = column[1];
+    const nullable = column[3] === "nullable";
+    return `\`${columnName}\`: ${fakedColumnValue(
+      columnName,
+      ctype,
+      nullable
+    )}`;
+  });
+  return `{ ${fakedColumns.join(",\n")} }`;
 }

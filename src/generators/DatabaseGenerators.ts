@@ -3,18 +3,25 @@
 //
 // Database level generators.
 
-import { DatabaseSpec } from '../SchemaInterface';
-import { knexTableSpec, tableTemplate, typescriptTableName, typescriptTableRecordSpec } from './TableGenerators';
+import { DatabaseSpec } from "../SchemaInterface";
+import {
+  fakeRowGenerator,
+  knexTableSpec,
+  tableTemplate,
+  typescriptTableName,
+  typescriptTableRecordSpec,
+} from "./TableGenerators";
 
 /**
  * Generate the typescript table interfaces for the entire database.
  * @param spec Full database specification
  * @param customTypePath Path to the file that defines the custom object/string types
  */
-export function typescriptDbInterface<T extends string, S extends string, O extends string>(
-  spec: DatabaseSpec<T, S, O>,
-  customTypePath: string
-): string {
+export function typescriptDbInterface<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: DatabaseSpec<T, S, O>, customTypePath: string): string {
   const tables = spec.tables;
   const tableNames = Object.keys(tables);
 
@@ -49,19 +56,23 @@ export function typescriptDbInterface<T extends string, S extends string, O exte
   import * as Custom from '${customTypePath}';
 
   // Table record type interfaces
-  ${tsTablesSpec.join('\n')}
+  ${tsTablesSpec.join("\n")}
 
   // Table object types
-  ${tableObjectTypes.join('\n')}
+  ${tableObjectTypes.join("\n")}
 
   // Table name type
   export type DbTableName = '${tableNames.join(`'|'`)}';
 
   // Db record map
-  export type DbRecordType<T extends DbTableName> = ${tableRecordMap.join(':')} : never;
+  export type DbRecordType<T extends DbTableName> = ${tableRecordMap.join(
+    ":"
+  )} : never;
 
   // Db object map
-  export type DbObjectType<T extends DbTableName> = ${tableObjectMap.join(':')} : never;
+  export type DbObjectType<T extends DbTableName> = ${tableObjectMap.join(
+    ":"
+  )} : never;
   `;
 }
 
@@ -69,10 +80,11 @@ export function typescriptDbInterface<T extends string, S extends string, O exte
  * Generate the table functions for all the tables
  * @param spec Full database specification
  */
-export function knexDbSpec<T extends string, S extends string, O extends string>(
-  spec: DatabaseSpec<T, S, O>,
-  knexClientPath: string
-): string {
+export function knexDbSpec<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: DatabaseSpec<T, S, O>, knexClientPath: string): string {
   // Create DB level functions
   const dbFunctions =
     spec.functions?.map(([name, body]) => {
@@ -106,20 +118,64 @@ export function knexDbSpec<T extends string, S extends string, O extends string>
   import { knex } from '${knexClientPath}';
 
   // Db level functions
-  ${dbFunctions.join('\n')}
+  ${dbFunctions.join("\n")}
 
   // Table functions
-  ${knexTableSpecs.join('\n')}
+  ${knexTableSpecs.join("\n")}
 
   // Create all tables
   export async function createAllTables() {
-    ${dbFunctionCalls.join('\n')}
-    ${createTableCalls.join('\n')}
+    ${dbFunctionCalls.join("\n")}
+    ${createTableCalls.join("\n")}
   }
 
   // Drop all tables
   export async function dropAllTables() {
-    ${dropTableCalls.join('\n')}
+    ${dropTableCalls.join("\n")}
   }
   `;
+}
+
+/**
+ * Generate function for creating randomized data for each table.
+ * @param spec Full database specification
+ * @param tableInterfacesPath Path to the file that defines the custom object/string types
+ */
+export function fakeDataGenerators<
+  T extends string,
+  S extends string,
+  O extends string
+>(spec: DatabaseSpec<T, S, O>, tableInterfacesPath: string): string {
+  const tables = spec.tables;
+  const fakeTableGenerator = Object.keys(tables).map((tableName) => {
+    const tableSpec = tables[tableName as T];
+    const tsTableName = typescriptTableName(tableName);
+    return `export function fake${tsTableName}(): DbObjectType<'${tableName}'> {
+      return ${fakeRowGenerator(tableSpec)}
+    }`;
+  });
+
+  return `
+  import { DbObjectType } from '${tableInterfacesPath}';
+
+  // Random data generators for each table
+  ${fakeTableGenerator.join("\n")}
+
+  /**
+  * Generate a fake row for a given table name.
+  * @param tableName Name of the table to generate a fake row for
+  */
+  export function fakeRow<T extends DbTableName>(tableName: T): DbObjectType<T> {
+    switch (tableName) {
+      ${Object.keys(tables)
+        .map((name) => {
+          const tsTableName = typescriptTableName(name);
+          return `case '${name}': return fake${tsTableName}() as DbObjectType<'${name}'>;`;
+        })
+        .join("\n")}
+      default:
+        throw new Error(\`No fake data generator for table \${tableName}\`);
+    }
+  }
+`;
 }
