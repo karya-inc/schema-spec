@@ -4,7 +4,7 @@
 //
 // Database level generators.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.knexDbSpec = exports.typescriptDbInterface = void 0;
+exports.fakeDataGenerators = exports.knexDbSpec = exports.typescriptDbInterface = void 0;
 const TableGenerators_1 = require("./TableGenerators");
 /**
  * Generate the typescript table interfaces for the entire database.
@@ -41,19 +41,19 @@ function typescriptDbInterface(spec, customTypePath) {
   import * as Custom from '${customTypePath}';
 
   // Table record type interfaces
-  ${tsTablesSpec.join('\n')}
+  ${tsTablesSpec.join("\n")}
 
   // Table object types
-  ${tableObjectTypes.join('\n')}
+  ${tableObjectTypes.join("\n")}
 
   // Table name type
   export type DbTableName = '${tableNames.join(`'|'`)}';
 
   // Db record map
-  export type DbRecordType<T extends DbTableName> = ${tableRecordMap.join(':')} : never;
+  export type DbRecordType<T extends DbTableName> = ${tableRecordMap.join(":")} : never;
 
   // Db object map
-  export type DbObjectType<T extends DbTableName> = ${tableObjectMap.join(':')} : never;
+  export type DbObjectType<T extends DbTableName> = ${tableObjectMap.join(":")} : never;
   `;
 }
 exports.typescriptDbInterface = typescriptDbInterface;
@@ -89,22 +89,47 @@ function knexDbSpec(spec, knexClientPath) {
   import { knex } from '${knexClientPath}';
 
   // Db level functions
-  ${dbFunctions.join('\n')}
+  ${dbFunctions.join("\n")}
 
   // Table functions
-  ${knexTableSpecs.join('\n')}
+  ${knexTableSpecs.join("\n")}
 
   // Create all tables
   export async function createAllTables() {
-    ${dbFunctionCalls.join('\n')}
-    ${createTableCalls.join('\n')}
+    ${dbFunctionCalls.join("\n")}
+    ${createTableCalls.join("\n")}
   }
 
   // Drop all tables
   export async function dropAllTables() {
-    ${dropTableCalls.join('\n')}
+    ${dropTableCalls.join("\n")}
   }
   `;
 }
 exports.knexDbSpec = knexDbSpec;
+/**
+ * Generate function for creating randomized data for each table.
+ * @param spec Full database specification
+ * @param tableInterfacesPath Path to the file that defines the custom object/string types
+ */
+function fakeDataGenerators(spec, tableInterfacesPath, customTypePath) {
+    const tables = spec.tables;
+    const fakeTableGenerator = Object.keys(tables).map((tableName) => {
+        const tableSpec = tables[tableName];
+        const tsTableName = (0, TableGenerators_1.typescriptTableName)(tableName);
+        const template = (0, TableGenerators_1.tableTemplate)(tableSpec.templates);
+        return `export function fake${tsTableName} ${template}(): DbRecordType<'${tableName}'> {
+      return ${(0, TableGenerators_1.fakeRowGenerator)(tableSpec)} as DbRecordType<'${tableName}'>;
+    }`;
+    });
+    return `
+  import { DbRecordType } from '${tableInterfacesPath}';
+  import * as Custom from '${customTypePath}';
+  import { faker } from '@faker-js/faker';
+
+  // Random data generators for each table
+  ${fakeTableGenerator.join("\n")}
+`;
+}
+exports.fakeDataGenerators = fakeDataGenerators;
 //# sourceMappingURL=DatabaseGenerators.js.map

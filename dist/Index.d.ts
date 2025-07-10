@@ -1,5 +1,5 @@
-export * from './SchemaInterface';
-import { DatabaseSpec } from './SchemaInterface';
+export * from "./SchemaInterface";
+import { DatabaseSpec } from "./SchemaInterface";
 /**
  * Write the database typescript interface into a given file
  * @param dbSpec Database specification
@@ -12,3 +12,4 @@ export declare function writeTypescriptInterfaceFile<T extends string, S extends
  * @param fileName Path to the destination file
  */
 export declare function writeTableFunctionsFile<T extends string, S extends string, O extends string>(dbSpec: DatabaseSpec<T, S, O>, knexClientPath: string, fileName: string): void;
+export declare function writeFakeDataGeneratorsFile<T extends string, S extends string, O extends string>(dbSpec: DatabaseSpec<T, S, O>, tableInterfacesPath: string, customTypePath: string, fileName: string): void;

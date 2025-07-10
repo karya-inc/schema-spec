@@ -6,6 +6,15 @@ import { TableColumnSpec, TableColumnType } from "../SchemaInterface";
  */
 export declare function typescriptType<T extends string, S extends string, O extends string>(name: string, ctype: TableColumnType<T, S, O>): string;
 /**
+ * Code to generate a fake value for a column based on its type.
+ * @param columnName Name of the column
+ * @param ctype Type of the column
+ * @param nullable Whether the column is nullable. Gives nullable fields a 50% chance of being null.
+ *
+ * @returns A string with the code to generate a fake value for the column.
+ */
+export declare function fakedColumnValue<T extends string, S extends string, O extends string>(columnName: string, ctype: TableColumnType<T, S, O>, nullable: boolean): string;
+/**
  * Generate typescript definition for a column given a spec
  * @param spec Specification of the column
  */

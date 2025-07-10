@@ -30,14 +30,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.writeTableFunctionsFile = exports.writeTypescriptInterfaceFile = void 0;
+exports.writeFakeDataGeneratorsFile = exports.writeTableFunctionsFile = exports.writeTypescriptInterfaceFile = void 0;
 __exportStar(require("./SchemaInterface"), exports);
 const DatabaseGenerators_1 = require("./generators/DatabaseGenerators");
 const prettier = __importStar(require("prettier"));
 const fs = __importStar(require("fs"));
 // Read the formatter config
 const prettierconfig = {
-    parser: 'typescript',
+    parser: "typescript",
     semi: true,
     singleQuote: true,
     tabWidth: 2,
@@ -65,4 +65,9 @@ function writeTableFunctionsFile(dbSpec, knexClientPath, fileName) {
     fs.writeFileSync(fileName, format(data));
 }
 exports.writeTableFunctionsFile = writeTableFunctionsFile;
+function writeFakeDataGeneratorsFile(dbSpec, tableInterfacesPath, customTypePath, fileName) {
+    const data = (0, DatabaseGenerators_1.fakeDataGenerators)(dbSpec, tableInterfacesPath, customTypePath);
+    fs.writeFileSync(fileName, format(data));
+}
+exports.writeFakeDataGeneratorsFile = writeFakeDataGeneratorsFile;
 //# sourceMappingURL=Index.js.map
