@@ -145,37 +145,27 @@ export function fakeDataGenerators<
   T extends string,
   S extends string,
   O extends string
->(spec: DatabaseSpec<T, S, O>, tableInterfacesPath: string): string {
+>(
+  spec: DatabaseSpec<T, S, O>,
+  tableInterfacesPath: string,
+  customTypePath: string
+): string {
   const tables = spec.tables;
   const fakeTableGenerator = Object.keys(tables).map((tableName) => {
     const tableSpec = tables[tableName as T];
     const tsTableName = typescriptTableName(tableName);
-    return `export function fake${tsTableName}(): DbObjectType<'${tableName}'> {
-      return ${fakeRowGenerator(tableSpec)}
+    const template = tableTemplate(tableSpec.templates);
+    return `export function fake${tsTableName} ${template}(): DbRecordType<'${tableName}'> {
+      return ${fakeRowGenerator(tableSpec)} as DbRecordType<'${tableName}'>;
     }`;
   });
 
   return `
-  import { DbObjectType } from '${tableInterfacesPath}';
+  import { DbRecordType } from '${tableInterfacesPath}';
+  import * as Custom from '${customTypePath}';
+  import { faker } from '@faker-js/faker';
 
   // Random data generators for each table
   ${fakeTableGenerator.join("\n")}
-
-  /**
-  * Generate a fake row for a given table name.
-  * @param tableName Name of the table to generate a fake row for
-  */
-  export function fakeRow<T extends DbTableName>(tableName: T): DbObjectType<T> {
-    switch (tableName) {
-      ${Object.keys(tables)
-        .map((name) => {
-          const tsTableName = typescriptTableName(name);
-          return `case '${name}': return fake${tsTableName}() as DbObjectType<'${name}'>;`;
-        })
-        .join("\n")}
-      default:
-        throw new Error(\`No fake data generator for table \${tableName}\`);
-    }
-  }
 `;
 }

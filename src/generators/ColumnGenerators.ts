@@ -79,7 +79,7 @@ function fakerGeneratorForString(columnName: string, length: number) {
   if (columnName.includes("url")) {
     return "faker.internet.url()";
   }
-  return `faker.string.words({min: 3, max: ${length}})`;
+  return `faker.lorem.words({min: 3, max: ${length}})`;
 }
 
 /**
@@ -104,7 +104,7 @@ export function fakedColumnValue<
     case "bigserial":
     case "bigint":
     case ">":
-      fakedValue = "faker.number.bigInt()";
+      fakedValue = "faker.number.bigInt().toString()";
       break;
     case "int":
       fakedValue = "faker.number.int()";
@@ -115,9 +115,16 @@ export function fakedColumnValue<
     case "boolean":
       fakedValue = "faker.datatype.boolean()";
       break;
-    case "string":
-      fakedValue = fakerGeneratorForString(columnName, ctype[1]);
+    case "string": {
+      const length = ctype[1];
+      const stringType = ctype[2];
+      fakedValue = fakerGeneratorForString(columnName, length);
+      if (stringType) {
+        // If the string type is specified, we typecast the generated value
+        fakedValue = `${fakedValue} as Custom.${stringType}`;
+      }
       break;
+    }
     case "text":
       fakedValue = "faker.lorem.paragraph()";
       break;
@@ -125,21 +132,32 @@ export function fakedColumnValue<
       fakedValue = "faker.date.recent({days: 30}).toISOString()";
       break;
     case "stringarray":
-      fakedValue = `{ "${columnName}": faker.helpers.arrayElements(faker.lorem.words(), { min: 1, max: 5 }) }`;
+      fakedValue = `{ "${columnName}": faker.helpers.arrayElements(faker.lorem.words().split(" "), { min: 1, max: 5 }) }`;
       break;
     case "kv":
     case "stringdict":
-    case "object":
+    case "object": {
       // To generate we take a random workd from lorem as the key
       // and a random string of length 10 as the value.
       fakedValue = `
         Object.fromEntries(
           faker.helpers.arrayElements(
-            faker.lorem.words(),
+            faker.lorem.words().split(" "),
             { min: 1, max: 5 }
           ).map(word => [word, faker.string.alpha()])
         )`;
+
+      let objType: string | undefined = ctype[1];
+      const templates = ctype[2];
+
+      if (!objType) break;
+
+      const templateString = templates ? `<${templates.join(",")}>` : "";
+      // If the object type is specified, we typecast the generated value
+      fakedValue = `${fakedValue} as object as Custom.${objType} ${templateString}`;
+
       break;
+    }
     case "template":
       // For templates, we return an empty object as a placeholder
       // since it is not clear what the template should contain.

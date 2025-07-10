@@ -61,8 +61,9 @@ export function writeFakeDataGeneratorsFile<
 >(
   dbSpec: DatabaseSpec<T, S, O>,
   tableInterfacesPath: string,
+  customTypePath: string,
   fileName: string
 ) {
-  const data = fakeDataGenerators(dbSpec, tableInterfacesPath);
+  const data = fakeDataGenerators(dbSpec, tableInterfacesPath, customTypePath);
   fs.writeFileSync(fileName, format(data));
 }

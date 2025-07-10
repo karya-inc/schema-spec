@@ -125,11 +125,7 @@ export function fakeRowGenerator<
     const columnName = column[0];
     const ctype = column[1];
     const nullable = column[3] === "nullable";
-    return `\`${columnName}\`: ${fakedColumnValue(
-      columnName,
-      ctype,
-      nullable
-    )}`;
+    return `'${columnName}': ${fakedColumnValue(columnName, ctype, nullable)}`;
   });
   return `{ ${fakedColumns.join(",\n")} }`;
 }
